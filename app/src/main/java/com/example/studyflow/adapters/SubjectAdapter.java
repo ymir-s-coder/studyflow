@@ -47,8 +47,12 @@ public class SubjectAdapter extends RecyclerView.Adapter<SubjectAdapter.ViewHold
         SubjectResponseDto subject = subjects.get(position);
 
         holder.textName.setText(subject.getTitle() != null ? subject.getTitle() : "Untitled subject");
-        holder.textGoal.setText(subject.getDescription() != null ? subject.getDescription() : "");
-        holder.textProgress.setText("Progress: 0%");
+
+        String goalText = buildGoalText(subject);
+        holder.textGoal.setText(goalText);
+
+        int progress = calculateProgressPercent(subject);
+        holder.textProgress.setText("Progress: " + progress + "%");
 
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
@@ -60,6 +64,70 @@ public class SubjectAdapter extends RecyclerView.Adapter<SubjectAdapter.ViewHold
     @Override
     public int getItemCount() {
         return subjects.size();
+    }
+
+    private int calculateProgressPercent(SubjectResponseDto subject) {
+        if (subject == null) {
+            return 0;
+        }
+
+        Integer plannedTotalMinutes = subject.getPlannedTotalMinutes();
+        Long studiedSeconds = subject.getStudiedSeconds();
+
+        if (plannedTotalMinutes == null || plannedTotalMinutes <= 0) {
+            return 0;
+        }
+
+        if (studiedSeconds == null || studiedSeconds <= 0) {
+            return 0;
+        }
+
+        long plannedSeconds = plannedTotalMinutes * 60L;
+
+        int progress = (int) Math.round((studiedSeconds * 100.0) / plannedSeconds);
+
+        return Math.min(progress, 100);
+    }
+
+    private String buildGoalText(SubjectResponseDto subject) {
+        if (subject == null) {
+            return "";
+        }
+
+        Integer plannedTotalMinutes = subject.getPlannedTotalMinutes();
+        Integer goalMinutesPerSession = subject.getGoalMinutesPerSession();
+
+        if (plannedTotalMinutes == null || plannedTotalMinutes <= 0) {
+            return subject.getDescription() != null ? subject.getDescription() : "";
+        }
+
+        String totalPlan = formatMinutes(plannedTotalMinutes);
+
+        if (goalMinutesPerSession == null || goalMinutesPerSession <= 0) {
+            return "Total plan: " + totalPlan;
+        }
+
+        return "Total plan: " + totalPlan
+                + " / Session: " + formatMinutes(goalMinutesPerSession);
+    }
+
+    private String formatMinutes(Integer minutes) {
+        if (minutes == null || minutes <= 0) {
+            return "not set";
+        }
+
+        int hours = minutes / 60;
+        int leftMinutes = minutes % 60;
+
+        if (hours > 0 && leftMinutes > 0) {
+            return hours + " h " + leftMinutes + " min";
+        }
+
+        if (hours > 0) {
+            return hours + " h";
+        }
+
+        return minutes + " min";
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {

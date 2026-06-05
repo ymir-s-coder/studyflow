@@ -16,7 +16,7 @@ import com.example.studyflow.storage.local.session.LocalStudySessionEntity;
                 LocalStudySessionEntity.class,
                 LocalMicroCheckpointEntity.class
         },
-        version = 2,
+        version = 5,
         exportSchema = false
 )
 public abstract class StudyflowDatabase extends RoomDatabase {
@@ -41,6 +41,7 @@ public abstract class StudyflowDatabase extends RoomDatabase {
                 }
             }
         }
+
         return INSTANCE;
     }
 }

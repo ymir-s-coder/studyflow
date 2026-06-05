@@ -85,7 +85,13 @@ public class SubjectsFragment extends Fragment {
 
             ((MainActivity) requireActivity()).openSubjectDetail(
                     subjectId,
-                    subject.getTitle()
+                    subject.getTitle(),
+                    subject.getDescription(),
+                    subject.getPlannedTotalMinutes(),
+                    subject.getGoalMinutesPerSession(),
+                    subject.getLearningType(),
+                    subject.getStudyFrequency(),
+                    subject.getNotes()
             );
         });
 

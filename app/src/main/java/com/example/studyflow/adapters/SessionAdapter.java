@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.studyflow.R;
+import com.example.studyflow.network.responses.MicroCheckpointResponseDto;
 import com.example.studyflow.network.responses.SessionResponseDto;
 
 import java.util.ArrayList;
@@ -94,6 +95,8 @@ public class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.SessionV
             holder.textSessionNotes.setVisibility(View.GONE);
         }
 
+        bindMicroCheckpoints(holder, session);
+
         String createdAt = session.getCreatedAt();
 
         if (createdAt != null && !createdAt.trim().isEmpty()) {
@@ -102,6 +105,48 @@ public class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.SessionV
         } else {
             holder.textSessionDate.setVisibility(View.GONE);
         }
+    }
+
+    private void bindMicroCheckpoints(SessionViewHolder holder, SessionResponseDto session) {
+        List<MicroCheckpointResponseDto> checkpoints = session.getMicroCheckpoints();
+
+        if (checkpoints == null || checkpoints.isEmpty()) {
+            holder.textPauseSurvey.setVisibility(View.GONE);
+            return;
+        }
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("Pause survey:");
+
+        for (int i = 0; i < checkpoints.size(); i++) {
+            MicroCheckpointResponseDto checkpoint = checkpoints.get(i);
+
+            builder.append("\n\nPause ").append(i + 1);
+
+            String distractionCountRange = checkpoint.getDistractionCountRange();
+            String mood = checkpoint.getMood();
+            String breakReason = checkpoint.getBreakReason();
+            Integer concentrationLevel = checkpoint.getConcentrationLevel();
+
+            if (distractionCountRange != null && !distractionCountRange.trim().isEmpty()) {
+                builder.append("\nDistractions: ").append(distractionCountRange);
+            }
+
+            if (mood != null && !mood.trim().isEmpty()) {
+                builder.append("\nMood: ").append(mood);
+            }
+
+            if (breakReason != null && !breakReason.trim().isEmpty()) {
+                builder.append("\nReason: ").append(breakReason);
+            }
+
+            if (concentrationLevel != null) {
+                builder.append("\nConcentration: ").append(concentrationLevel);
+            }
+        }
+
+        holder.textPauseSurvey.setText(builder.toString());
+        holder.textPauseSurvey.setVisibility(View.VISIBLE);
     }
 
     @Override
@@ -115,6 +160,7 @@ public class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.SessionV
         TextView textSessionProductivity;
         TextView textSessionFatigue;
         TextView textSessionNotes;
+        TextView textPauseSurvey;
         TextView textSessionDate;
 
         public SessionViewHolder(@NonNull View itemView) {
@@ -124,6 +170,7 @@ public class SessionAdapter extends RecyclerView.Adapter<SessionAdapter.SessionV
             textSessionProductivity = itemView.findViewById(R.id.textSessionProductivity);
             textSessionFatigue = itemView.findViewById(R.id.textSessionFatigue);
             textSessionNotes = itemView.findViewById(R.id.textSessionNotes);
+            textPauseSurvey = itemView.findViewById(R.id.textPauseSurvey);
             textSessionDate = itemView.findViewById(R.id.textSessionDate);
         }
     }

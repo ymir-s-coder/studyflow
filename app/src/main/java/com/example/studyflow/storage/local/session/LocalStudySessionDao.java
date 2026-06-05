@@ -39,4 +39,20 @@ public interface LocalStudySessionDao {
 
     @Query("SELECT * FROM study_sessions WHERE subjectServerId = :subjectId OR subjectLocalId = :subjectId ORDER BY createdAtMillis DESC")
     List<LocalStudySessionEntity> getSessionsBySubjectId(long subjectId);
+
+    @Query("UPDATE study_sessions SET subjectServerId = :subjectServerId, updatedAtMillis = :updatedAtMillis WHERE subjectLocalId = :subjectLocalId AND subjectServerId IS NULL")
+    void updateSubjectServerIdForPendingSessions(
+            long subjectLocalId,
+            Long subjectServerId,
+            long updatedAtMillis
+    );
+
+    @Query("SELECT IFNULL(SUM(durationSeconds), 0) FROM study_sessions " +
+            "WHERE subjectServerId = :subjectId OR subjectLocalId = :subjectId")
+    Long getTotalStudiedSecondsBySubjectId(long subjectId);
+
+    @Query("SELECT * FROM study_sessions " +
+            "WHERE subjectServerId = :subjectId OR subjectLocalId = :subjectId " +
+            "ORDER BY createdAtMillis DESC")
+    List<LocalStudySessionEntity> getSessionsBySubjectIdSync(long subjectId);
 }

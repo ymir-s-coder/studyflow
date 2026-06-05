@@ -27,6 +27,7 @@ public class SubjectViewModel extends AndroidViewModel {
     private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
     private final MutableLiveData<Boolean> subjectCreated = new MutableLiveData<>();
     private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
+
     private boolean isCreatingSubject = false;
     private boolean isSyncingSubjects = false;
 
@@ -96,7 +97,7 @@ public class SubjectViewModel extends AndroidViewModel {
                     @NonNull Response<List<SubjectResponseDto>> response
             ) {
                 isLoadingNow = false;
-                loading.setValue(false);
+                loading.postValue(false);
 
                 if (response.isSuccessful() && response.body() != null) {
                     List<SubjectResponseDto> serverSubjects = response.body();
@@ -108,6 +109,7 @@ public class SubjectViewModel extends AndroidViewModel {
                             isLoaded = true;
                         });
                     });
+
                     return;
                 }
 
@@ -116,7 +118,7 @@ public class SubjectViewModel extends AndroidViewModel {
                     return;
                 }
 
-                errorMessage.setValue("Server unavailable. Local subjects are shown.");
+                errorMessage.postValue("Server unavailable. Local subjects are shown.");
             }
 
             @Override
@@ -125,14 +127,21 @@ public class SubjectViewModel extends AndroidViewModel {
                     @NonNull Throwable t
             ) {
                 isLoadingNow = false;
-                loading.setValue(false);
+                loading.postValue(false);
 
-                errorMessage.setValue("Offline mode. Local subjects are shown.");
+                errorMessage.postValue("Offline mode. Local subjects are shown.");
             }
         });
     }
 
-    public void createSubject(String title, String description) {
+    public void createSubject(
+            String title,
+            String description,
+            Integer plannedTotalMinutes,
+            Integer goalMinutesPerSession,
+            String learningType,
+            String notes
+    ) {
         if (isCreatingSubject) {
             return;
         }
@@ -145,35 +154,87 @@ public class SubjectViewModel extends AndroidViewModel {
         subjectRepository.createSubjectOfflineFirst(
                 title,
                 description,
+                plannedTotalMinutes,
+                goalMinutesPerSession,
+                learningType,
+                notes,
                 new SubjectRepository.CreateSubjectCallback() {
                     @Override
                     public void onLocalSaved(SubjectEntity subject) {
                         subjectCreated.postValue(true);
 
-                        subjectRepository.getLocalSubjects(localSubjects -> {
-                            List<SubjectResponseDto> localDtos = convertLocalSubjectsToDto(localSubjects);
-                            subjects.postValue(localDtos);
-                            isLoaded = true;
+                        reloadLocalSubjects();
+
+                        subjectRepository.syncPendingSubjects(() -> {
+                            isCreatingSubject = false;
+                            loading.postValue(false);
+
+                            reloadLocalSubjects();
                         });
                     }
 
                     @Override
                     public void onSynced(SubjectEntity subject) {
-                        isCreatingSubject = false;
-                        loading.postValue(false);
-
-                        subjectRepository.getLocalSubjects(localSubjects -> {
-                            List<SubjectResponseDto> localDtos = convertLocalSubjectsToDto(localSubjects);
-                            subjects.postValue(localDtos);
-                            isLoaded = true;
-                        });
+                        // Сейчас не используется.
+                        // Синхронизация идёт через syncPendingSubjects().
                     }
 
                     @Override
                     public void onSyncFailed(SubjectEntity subject) {
                         isCreatingSubject = false;
                         loading.postValue(false);
+
+                        reloadLocalSubjects();
+
                         errorMessage.postValue("Subject saved locally. It will sync later.");
+                    }
+                }
+        );
+    }
+
+    public void syncSubjects() {
+        if (isSyncingSubjects) {
+            return;
+        }
+
+        isSyncingSubjects = true;
+        loading.postValue(true);
+
+        subjectRepository.syncPendingSubjects(() -> {
+            isSyncingSubjects = false;
+            loading.postValue(false);
+
+            refreshSubjects();
+        });
+    }
+
+    private void reloadLocalSubjects() {
+        subjectRepository.getLocalSubjects(localSubjects -> {
+            List<SubjectResponseDto> localDtos = convertLocalSubjectsToDto(localSubjects);
+            subjects.postValue(localDtos);
+            isLoaded = true;
+        });
+    }
+
+    public void updateSubjectNote(Long subjectId, String note) {
+        if (subjectId == null) {
+            errorMessage.postValue("Subject id is missing");
+            return;
+        }
+
+        subjectRepository.updateSubjectNote(
+                subjectId,
+                note,
+                new SubjectRepository.UpdateNoteCallback() {
+                    @Override
+                    public void onSuccess(String savedNote) {
+                        // Можно ничего не делать.
+                        // Fragment сам обновляет UI после сохранения.
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        errorMessage.postValue("Note was not saved: " + message);
                     }
                 }
         );
@@ -189,33 +250,38 @@ public class SubjectViewModel extends AndroidViewModel {
         for (SubjectEntity entity : localSubjects) {
             SubjectResponseDto dto = new SubjectResponseDto();
 
+            long subjectIdForSessions;
+
             if (entity.serverId != null) {
                 dto.setId(entity.serverId);
+                subjectIdForSessions = entity.serverId;
             } else {
                 dto.setId(-entity.localId);
+                subjectIdForSessions = entity.localId;
             }
 
             dto.setTitle(entity.title);
             dto.setDescription(entity.description);
+            dto.setPlannedTotalMinutes(entity.plannedTotalMinutes);
+            dto.setGoalMinutesPerSession(entity.goalMinutesPerSession);
+            dto.setLearningType(entity.learningType);
+            dto.setStudyFrequency(entity.studyFrequency);
+            dto.setNotes(entity.notes);
+
+            Long studiedSeconds = subjectRepository.getTotalStudiedSecondsBySubjectId(subjectIdForSessions);
+            dto.setStudiedSeconds(studiedSeconds);
+
+            android.util.Log.d(
+                    "SUBJECT_LIST_DEBUG",
+                    "subjectIdForSessions=" + subjectIdForSessions
+                            + ", title=" + entity.title
+                            + ", plannedTotalMinutes=" + entity.plannedTotalMinutes
+                            + ", studiedSeconds=" + studiedSeconds
+            );
 
             result.add(dto);
         }
 
         return result;
-    }
-
-    public void syncSubjects() {
-        if (isSyncingSubjects) {
-            return;
-        }
-
-        isSyncingSubjects = true;
-        loading.postValue(true);
-
-        subjectRepository.syncPendingSubjects(() -> {
-            isSyncingSubjects = false;
-            loading.postValue(false);
-            refreshSubjects();
-        });
     }
 }

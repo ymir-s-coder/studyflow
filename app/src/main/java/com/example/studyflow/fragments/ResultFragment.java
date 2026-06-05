@@ -102,7 +102,7 @@ public class ResultFragment extends Fragment {
         setupDefaultValues();
         setupListeners();
 
-        if (subjectId <= 0) {
+        if (subjectId == 0) {
             Toast.makeText(requireContext(), "Ошибка: subjectId не передан", Toast.LENGTH_SHORT).show();
             ((MainActivity) requireActivity()).returnToSubjects();
         }
@@ -316,27 +316,12 @@ public class ResultFragment extends Fragment {
 
         String notes = buildSessionReviewNotes();
 
-        if (sessionLocalId > 0) {
-            studyViewModel.finishSession(
-                    sessionLocalId,
-                    System.currentTimeMillis(),
-                    studiedSeconds,
-                    plannedSeconds,
-                    studyPlace,
-                    studyEnvironment,
-                    joinList(helpfulFactors),
-                    joinList(disturbingFactors),
-                    productivity,
-                    fatigue,
-                    notes,
-                    difficulty,
-                    needReview,
-                    fatigueLevel,
-                    understandingLevel
-            );
+        if (sessionLocalId <= 0) {
+            Toast.makeText(requireContext(), "Ошибка: sessionLocalId = " + sessionLocalId, Toast.LENGTH_SHORT).show();
+            return;
         }
 
-        if (subjectId <= 0) {
+        if (subjectId == 0) {
             Toast.makeText(requireContext(), "Ошибка: subjectId = " + subjectId, Toast.LENGTH_SHORT).show();
             return;
         }
@@ -346,84 +331,37 @@ public class ResultFragment extends Fragment {
             return;
         }
 
-        FinishSessionRequestDto request = new FinishSessionRequestDto(
-                subjectId,
-                studiedSeconds,
-                plannedSeconds,
-                productivity,
-                fatigue,
-                notes,
-                studyPlace,
-                studyEnvironment,
-                helpfulFactors,
-                disturbingFactors,
-                difficulty,
-                needReview,
-                fatigueLevel,
-                understandingLevel,
-                mapMicroCheckpointsToRequestDto()
-        );
-
         buttonSaveSessionReview.setEnabled(false);
         buttonSaveSessionReview.setText("Сохранение...");
 
-        ApiService apiService = ApiClient.getApiService(requireContext());
+        studyViewModel.finishSession(
+                sessionLocalId,
+                System.currentTimeMillis(),
+                studiedSeconds,
+                plannedSeconds,
+                studyPlace,
+                studyEnvironment,
+                joinList(helpfulFactors),
+                joinList(disturbingFactors),
+                productivity,
+                fatigue,
+                notes,
+                difficulty,
+                needReview,
+                fatigueLevel,
+                understandingLevel
+        );
 
-        apiService.finishSession(request).enqueue(new Callback<SessionResponseDto>() {
-            @Override
-            public void onResponse(
-                    @NonNull Call<SessionResponseDto> call,
-                    @NonNull Response<SessionResponseDto> response
-            ) {
-                if (response.isSuccessful() && response.body() != null) {
-                    SessionResponseDto savedSession = response.body();
+        Toast.makeText(
+                requireContext(),
+                "Сессия сохранена на телефоне",
+                Toast.LENGTH_SHORT
+        ).show();
 
-                    sessionViewModel.addSessionToCache(subjectId, savedSession);
-
-                    Toast.makeText(requireContext(), "Сессия сохранена", Toast.LENGTH_SHORT).show();
-
-                    ((MainActivity) requireActivity()).returnToSubjectDetail(
-                            subjectId,
-                            subjectName
-                    );
-                    return;
-                }
-
-                buttonSaveSessionReview.setEnabled(true);
-                buttonSaveSessionReview.setText("Save");
-
-                if (response.code() == 401 || response.code() == 403) {
-                    AuthErrorHandler.handleUnauthorized(requireContext());
-                    return;
-                }
-
-                Toast.makeText(
-                        requireContext(),
-                        "Ошибка сохранения: " + response.code(),
-                        Toast.LENGTH_SHORT
-                ).show();
-            }
-
-            @Override
-            public void onFailure(
-                    @NonNull Call<SessionResponseDto> call,
-                    @NonNull Throwable t
-            ) {
-                buttonSaveSessionReview.setEnabled(true);
-                buttonSaveSessionReview.setText("Save");
-
-                Toast.makeText(
-                        requireContext(),
-                        "Сессия сохранена на телефоне. Синхронизация будет позже.",
-                        Toast.LENGTH_SHORT
-                ).show();
-
-                ((MainActivity) requireActivity()).returnToSubjectDetail(
-                        subjectId,
-                        subjectName
-                );
-            }
-        });
+        ((MainActivity) requireActivity()).returnToSubjectDetail(
+                subjectId,
+                subjectName
+        );
     }
 
     private ArrayList<MicroCheckpointRequestDto> mapMicroCheckpointsToRequestDto() {

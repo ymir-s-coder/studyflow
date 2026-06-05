@@ -2,31 +2,91 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:padding="16dp">
+    android:orientation="vertical"
+    android:paddingStart="24dp"
+    android:paddingTop="20dp"
+    android:paddingEnd="24dp"
+    android:paddingBottom="8dp">
 
-    <EditText
-        android:id="@+id/inputHours"
-        android:layout_width="0dp"
+    <TextView
+        android:id="@+id/dialogTitle"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:hint="Часы"
-        android:inputType="number" />
+        android:text="Сколько будешь учиться сегодня?"
+        android:textColor="@color/black"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="20dp" />
 
-    <EditText
-        android:id="@+id/inputMinutes"
-        android:layout_width="0dp"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:hint="Мин"
-        android:inputType="number" />
+        android:orientation="horizontal"
+        android:gravity="center">
 
-    <EditText
-        android:id="@+id/inputSeconds"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:hint="Сек"
-        android:inputType="number" />
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <NumberPicker
+                android:id="@+id/inputHours"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Часы"
+                android:textSize="14sp"
+                android:textColor="@android:color/darker_gray" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <NumberPicker
+                android:id="@+id/inputMinutes"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Мин"
+                android:textSize="14sp"
+                android:textColor="@android:color/darker_gray" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <NumberPicker
+                android:id="@+id/inputSeconds"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Сек"
+                android:textSize="14sp"
+                android:textColor="@android:color/darker_gray" />
+
+        </LinearLayout>
+
+    </LinearLayout>
 
 </LinearLayout>

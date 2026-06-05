@@ -94,7 +94,7 @@ public class StudyFragment extends Fragment {
             }
         });
 
-        if (subjectId <= 0) {
+        if (subjectId == 0) {
             Toast.makeText(requireContext(), "Ошибка: subjectId не передан", Toast.LENGTH_SHORT).show();
             ((MainActivity) requireActivity()).returnToSubjects();
             return;
@@ -225,7 +225,7 @@ public class StudyFragment extends Fragment {
     }
 
     private void finishStudySession() {
-        if (subjectId <= 0) {
+        if (subjectId == 0) {
             Toast.makeText(requireContext(), "Ошибка: subjectId = " + subjectId, Toast.LENGTH_SHORT).show();
             return;
         }

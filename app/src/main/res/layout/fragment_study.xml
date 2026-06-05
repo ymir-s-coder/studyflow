@@ -5,17 +5,21 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#FAF7FF"
+    android:clickable="true"
+    android:focusable="true"
     android:padding="24dp"
     tools:context=".fragments.StudyFragment">
 
     <TextView
         android:id="@+id/textSubjectName"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="Java Study"
         android:textSize="24sp"
         android:textStyle="bold"
         android:textColor="@android:color/black"
+        android:gravity="center"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -24,7 +28,7 @@
         android:id="@+id/textStudyLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="12dp"
         android:text="Study in progress"
         android:textSize="16sp"
         android:textColor="#666666"
@@ -32,14 +36,14 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-
     <com.example.studyflow.utils.CircleTimerView
         android:id="@+id/circleTimer"
         android:layout_width="250dp"
         android:layout_height="250dp"
-        app:layout_constraintTop_toBottomOf="@id/textSubjectName"
+        android:layout_marginTop="24dp"
+        app:layout_constraintTop_toBottomOf="@id/textStudyLabel"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <TextView
         android:id="@+id/textTime"
@@ -48,10 +52,11 @@
         android:text="00:00:00"
         android:textSize="28sp"
         android:textStyle="bold"
+        android:textColor="@android:color/black"
         app:layout_constraintTop_toTopOf="@id/circleTimer"
         app:layout_constraintBottom_toBottomOf="@id/circleTimer"
         app:layout_constraintStart_toStartOf="@id/circleTimer"
-        app:layout_constraintEnd_toEndOf="@id/circleTimer"/>
+        app:layout_constraintEnd_toEndOf="@id/circleTimer" />
 
     <TextView
         android:id="@+id/textTimeCaption"
@@ -69,7 +74,7 @@
         android:id="@+id/buttonContainer"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="48dp"
+        android:layout_marginBottom="32dp"
         android:gravity="center"
         android:orientation="horizontal"
         android:weightSum="2"
@@ -92,8 +97,7 @@
             android:layout_weight="1"
             android:layout_marginStart="8dp"
             android:text="Finish" />
+
     </LinearLayout>
-
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

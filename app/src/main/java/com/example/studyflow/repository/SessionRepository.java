@@ -166,8 +166,10 @@ public class SessionRepository {
             LocalSessionsCallback callback
     ) {
         executorService.execute(() -> {
+            long lookupId = subjectId < 0 ? Math.abs(subjectId) : subjectId;
+
             List<LocalStudySessionEntity> sessions =
-                    sessionDao.getSessionsBySubjectId(subjectId);
+                    sessionDao.getSessionsBySubjectId(lookupId);
 
             if (callback != null) {
                 callback.onResult(sessions);
@@ -196,73 +198,94 @@ public class SessionRepository {
                 return;
             }
 
-            for (LocalStudySessionEntity session : pendingSessions) {
-                if (session.subjectServerId == null || session.subjectServerId <= 0) {
-                    sessionDao.markSessionSyncFailed(
-                            session.localId,
-                            System.currentTimeMillis()
-                    );
-                    continue;
-                }
+            syncPendingSessionAtIndex(pendingSessions, 0, callback);
+        });
+    }
 
-                List<LocalMicroCheckpointEntity> checkpoints =
-                        sessionDao.getMicroCheckpointsBySessionLocalId(session.localId);
+    private void syncPendingSessionAtIndex(
+            List<LocalStudySessionEntity> pendingSessions,
+            int index,
+            SyncSessionsCallback callback
+    ) {
+        if (index >= pendingSessions.size()) {
+            if (callback != null) {
+                callback.onFinished();
+            }
+            return;
+        }
 
-                FinishSessionRequestDto request = new FinishSessionRequestDto(
-                        session.subjectServerId,
-                        session.durationSeconds,
-                        session.plannedSeconds,
-                        session.productivityLevel,
-                        session.fatigue,
-                        session.notes,
-                        session.studyPlace,
-                        session.studyEnvironment,
-                        splitTextToList(session.helpfulFactors),
-                        splitTextToList(session.disturbingFactors),
-                        session.difficultyLevel,
-                        session.needReview,
-                        session.fatigueLevel,
-                        session.understandingLevel,
-                        mapLocalCheckpointsToDto(checkpoints)
-                );
+        LocalStudySessionEntity session = pendingSessions.get(index);
 
-                apiService.finishSession(request).enqueue(new Callback<SessionResponseDto>() {
-                    @Override
-                    public void onResponse(
-                            @NonNull Call<SessionResponseDto> call,
-                            @NonNull Response<SessionResponseDto> response
-                    ) {
-                        if (response.isSuccessful() && response.body() != null) {
-                            SessionResponseDto savedSession = response.body();
+        if (session.subjectServerId == null || session.subjectServerId <= 0) {
+            sessionDao.markSessionSyncFailed(
+                    session.localId,
+                    System.currentTimeMillis()
+            );
 
-                            executorService.execute(() -> sessionDao.markSessionSynced(
-                                    session.localId,
-                                    savedSession.getId(),
-                                    System.currentTimeMillis()
-                            ));
-                        } else {
-                            executorService.execute(() -> sessionDao.markSessionSyncFailed(
-                                    session.localId,
-                                    System.currentTimeMillis()
-                            ));
-                        }
-                    }
+            syncPendingSessionAtIndex(pendingSessions, index + 1, callback);
+            return;
+        }
 
-                    @Override
-                    public void onFailure(
-                            @NonNull Call<SessionResponseDto> call,
-                            @NonNull Throwable t
-                    ) {
-                        executorService.execute(() -> sessionDao.markSessionPending(
+        List<LocalMicroCheckpointEntity> checkpoints =
+                sessionDao.getMicroCheckpointsBySessionLocalId(session.localId);
+
+        FinishSessionRequestDto request = new FinishSessionRequestDto(
+                session.subjectServerId,
+                session.durationSeconds,
+                session.plannedSeconds,
+                session.productivityLevel,
+                session.fatigue,
+                session.notes,
+                session.studyPlace,
+                session.studyEnvironment,
+                splitTextToList(session.helpfulFactors),
+                splitTextToList(session.disturbingFactors),
+                session.difficultyLevel,
+                session.needReview,
+                session.fatigueLevel,
+                session.understandingLevel,
+                mapLocalCheckpointsToDto(checkpoints)
+        );
+
+        apiService.finishSession(request).enqueue(new Callback<SessionResponseDto>() {
+            @Override
+            public void onResponse(
+                    @NonNull Call<SessionResponseDto> call,
+                    @NonNull Response<SessionResponseDto> response
+            ) {
+                executorService.execute(() -> {
+                    if (response.isSuccessful() && response.body() != null) {
+                        SessionResponseDto savedSession = response.body();
+
+                        sessionDao.markSessionSynced(
+                                session.localId,
+                                savedSession.getId(),
+                                System.currentTimeMillis()
+                        );
+                    } else {
+                        sessionDao.markSessionSyncFailed(
                                 session.localId,
                                 System.currentTimeMillis()
-                        ));
+                        );
                     }
+
+                    syncPendingSessionAtIndex(pendingSessions, index + 1, callback);
                 });
             }
 
-            if (callback != null) {
-                callback.onFinished();
+            @Override
+            public void onFailure(
+                    @NonNull Call<SessionResponseDto> call,
+                    @NonNull Throwable t
+            ) {
+                executorService.execute(() -> {
+                    sessionDao.markSessionPending(
+                            session.localId,
+                            System.currentTimeMillis()
+                    );
+
+                    syncPendingSessionAtIndex(pendingSessions, index + 1, callback);
+                });
             }
         });
     }

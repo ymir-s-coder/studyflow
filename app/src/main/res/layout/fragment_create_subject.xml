@@ -2,7 +2,8 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#FAF7FF">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -11,75 +12,111 @@
 
         <TextView
             android:id="@+id/textCreateTitle"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Create Subject"
+            android:text="Create Class"
+            android:textColor="@android:color/black"
             android:textSize="26sp"
             android:textStyle="bold"
-            android:textColor="@android:color/black"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <EditText
             android:id="@+id/editSubjectName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:hint="Subject name"
-            app:layout_constraintTop_toBottomOf="@id/textCreateTitle"
+            android:hint="Class name"
+            android:singleLine="true"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintTop_toBottomOf="@id/textCreateTitle" />
 
         <EditText
-            android:id="@+id/editGoal"
+            android:id="@+id/editPlannedTotalMinutes"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:hint="Goal (example: 2 hours per day)"
-            app:layout_constraintTop_toBottomOf="@id/editSubjectName"
+            android:hint="Total planned study time, minutes"
+            android:inputType="number"
+            android:singleLine="true"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintTop_toBottomOf="@id/editSubjectName" />
 
         <EditText
-            android:id="@+id/editFrequency"
+            android:id="@+id/editGoalMinutesPerSession"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:hint="Study frequency"
-            app:layout_constraintTop_toBottomOf="@id/editGoal"
+            android:hint="Planned time for one session, minutes"
+            android:inputType="number"
+            android:singleLine="true"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintTop_toBottomOf="@id/editPlannedTotalMinutes" />
+
+        <TextView
+            android:id="@+id/textLearningTypeLabel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="Learning type"
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/editGoalMinutesPerSession" />
+
+        <RadioGroup
+            android:id="@+id/radioLearningTypeGroup"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="vertical"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/textLearningTypeLabel">
+
+            <RadioButton
+                android:id="@+id/radioLecture"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="Watching lectures" />
+
+            <RadioButton
+                android:id="@+id/radioCoding"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Writing code" />
+        </RadioGroup>
 
         <EditText
-            android:id="@+id/editDuration"
+            android:id="@+id/editDescription"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:hint="Average session duration"
-            app:layout_constraintTop_toBottomOf="@id/editFrequency"
+            android:gravity="top"
+            android:hint="Description"
+            android:inputType="textMultiLine"
+            android:minLines="3"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-
-        <Switch
-            android:id="@+id/switchReminder"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:text="Enable reminders"
-            app:layout_constraintTop_toBottomOf="@id/editDuration"
-            app:layout_constraintStart_toStartOf="parent" />
+            app:layout_constraintTop_toBottomOf="@id/radioLearningTypeGroup" />
 
         <Button
             android:id="@+id/buttonCreateSubject"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="28dp"
-            android:text="Create Subject"
-            app:layout_constraintTop_toBottomOf="@id/switchReminder"
-            app:layout_constraintStart_toStartOf="parent"
+            android:text="Create Class"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/editDescription" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

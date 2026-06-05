@@ -43,12 +43,22 @@
 
         <TextView
             android:id="@+id/textSessionNotes"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Notes: ..."
             android:layout_marginTop="6dp"
             android:textSize="14sp"
             android:textColor="@android:color/black"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/textPauseSurvey"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Pause survey"
+            android:layout_marginTop="8dp"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
             android:visibility="gone" />
 
         <TextView

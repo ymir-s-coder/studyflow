@@ -1,6 +1,7 @@
 package com.example.studyflow.viewmodel;
 
 import android.app.Application;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
@@ -13,6 +14,10 @@ import com.example.studyflow.network.responses.SessionResponseDto;
 import com.example.studyflow.repository.SessionRepository;
 import com.example.studyflow.storage.local.session.LocalStudySessionEntity;
 import com.example.studyflow.utils.AuthErrorHandler;
+import com.example.studyflow.network.responses.MicroCheckpointResponseDto;
+import com.example.studyflow.storage.local.StudyflowDatabase;
+import com.example.studyflow.storage.local.session.LocalMicroCheckpointEntity;
+import com.example.studyflow.storage.local.session.LocalStudySessionDao;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,6 +33,7 @@ public class SessionViewModel extends AndroidViewModel {
 
     private final ApiService apiService;
     private final SessionRepository sessionRepository;
+    private final LocalStudySessionDao sessionDao;
 
     private final MutableLiveData<List<SessionResponseDto>> sessionsLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
@@ -41,6 +47,7 @@ public class SessionViewModel extends AndroidViewModel {
         super(application);
         apiService = ApiClient.getApiService(application);
         sessionRepository = new SessionRepository(application);
+        sessionDao = StudyflowDatabase.getInstance(application).localStudySessionDao();
     }
 
     public LiveData<List<SessionResponseDto>> getSessionsLiveData() {
@@ -86,11 +93,17 @@ public class SessionViewModel extends AndroidViewModel {
 
             sessionsCache.put(subjectId, new ArrayList<>(localDtos));
 
+            Log.d("SESSION_DEBUG", "Local sessions count = " + localDtos.size());
+
             if (subjectId.equals(currentSubjectId)) {
                 sessionsLiveData.postValue(localDtos);
             }
 
-            loadSessionsFromServer(subjectId);
+            if (subjectId > 0) {
+                loadSessionsFromServer(subjectId);
+            } else {
+                loadingSubjectIds.remove(subjectId);
+            }
         });
     }
 
@@ -103,24 +116,37 @@ public class SessionViewModel extends AndroidViewModel {
             ) {
                 loadingSubjectIds.remove(subjectId);
 
-                if (response.isSuccessful() && response.body() != null) {
-                    List<SessionResponseDto> result = response.body();
+                if (!response.isSuccessful()) {
+                    Log.d("SESSION_DEBUG", "Server response not successful: " + response.code());
+                    return;
+                }
 
-                    sessionsCache.put(subjectId, new ArrayList<>(result));
+                List<SessionResponseDto> serverSessions = response.body();
 
-                    if (subjectId.equals(currentSubjectId)) {
-                        sessionsLiveData.postValue(result);
+                Log.d("SESSION_DEBUG", "Server sessions count = "
+                        + (serverSessions == null ? "null" : serverSessions.size()));
+
+                if (serverSessions == null || serverSessions.isEmpty()) {
+                    List<SessionResponseDto> cachedSessions = sessionsCache.get(subjectId);
+
+                    Log.d("SESSION_DEBUG", "Server returned empty list. Keep local cache count = "
+                            + (cachedSessions == null ? "null" : cachedSessions.size()));
+
+                    if (cachedSessions != null && subjectId.equals(currentSubjectId)) {
+                        sessionsLiveData.postValue(cachedSessions);
                     }
 
                     return;
                 }
 
-                if (response.code() == 401 || response.code() == 403) {
-                    AuthErrorHandler.handleUnauthorized(getApplication());
-                    return;
+                sessionsCache.put(subjectId, new ArrayList<>(serverSessions));
+
+                if (subjectId.equals(currentSubjectId)) {
+                    sessionsLiveData.postValue(serverSessions);
                 }
 
-                errorMessage.postValue("Offline mode. Local session history is shown.");
+                // Пока убираем это, потому что такого метода нет в SessionRepository:
+                // sessionRepository.saveServerSessionsToLocal(subjectId, serverSessions);
             }
 
             @Override
@@ -129,7 +155,7 @@ public class SessionViewModel extends AndroidViewModel {
                     @NonNull Throwable t
             ) {
                 loadingSubjectIds.remove(subjectId);
-                errorMessage.postValue("Offline mode. Local session history is shown.");
+                Log.d("SESSION_DEBUG", "Server sessions load failed: " + t.getMessage());
             }
         });
     }
@@ -152,18 +178,54 @@ public class SessionViewModel extends AndroidViewModel {
                 dto.setId(-entity.localId);
             }
 
-            dto.setSubjectId(entity.subjectServerId);
+            if (entity.subjectServerId != null) {
+                dto.setSubjectId(entity.subjectServerId);
+            } else if (entity.subjectLocalId != null) {
+                dto.setSubjectId(-entity.subjectLocalId);
+            }
+
             dto.setDurationSeconds(entity.durationSeconds);
             dto.setPlannedSeconds(entity.plannedSeconds);
             dto.setProductivity(entity.productivityLevel);
             dto.setFatigue(entity.fatigue);
             dto.setNotes(entity.notes);
+
             dto.setStudyPlace(entity.studyPlace);
             dto.setStudyEnvironment(entity.studyEnvironment);
             dto.setDifficulty(entity.difficultyLevel);
             dto.setNeedReview(entity.needReview);
             dto.setFatigueLevel(entity.fatigueLevel);
             dto.setUnderstanding(entity.understandingLevel);
+            dto.setCreatedAtMillis(entity.createdAtMillis);
+
+            List<LocalMicroCheckpointEntity> localCheckpoints =
+                    sessionDao.getMicroCheckpointsBySessionLocalId(entity.localId);
+
+            dto.setMicroCheckpoints(convertLocalCheckpointsToDto(localCheckpoints));
+
+            result.add(dto);
+        }
+
+        return result;
+    }
+
+    private List<MicroCheckpointResponseDto> convertLocalCheckpointsToDto(
+            List<LocalMicroCheckpointEntity> localCheckpoints
+    ) {
+        List<MicroCheckpointResponseDto> result = new ArrayList<>();
+
+        if (localCheckpoints == null) {
+            return result;
+        }
+
+        for (LocalMicroCheckpointEntity entity : localCheckpoints) {
+            MicroCheckpointResponseDto dto = new MicroCheckpointResponseDto();
+
+            dto.setId(-entity.localId);
+            dto.setDistractionCountRange(entity.distractionCountRange);
+            dto.setMood(entity.mood);
+            dto.setBreakReason(entity.breakReason);
+            dto.setConcentrationLevel(entity.concentrationLevel);
             dto.setCreatedAtMillis(entity.createdAtMillis);
 
             result.add(dto);
